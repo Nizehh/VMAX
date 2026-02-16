@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Etiqueta de Patrimônio - {{ e.ativo_tag or e.id }}</title>
+
+    <style>
+        /* Configurações de Impressão para Etiqueta 50x30mm */
+        @page { 
+            size: 50mm 30mm; 
+            margin: 0; 
+        }
+
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0; 
+            padding: 2mm; 
+            width: 46mm;
+            height: 26mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .header {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 1mm;
+            border-bottom: 0.5pt solid #000;
+            width: 100%;
+            text-align: center;
+            padding-bottom: 1px;
+        }
+
+        .content-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .qr-code {
+            width: 16mm;
+            height: 16mm;
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .info {
+            flex: 1;
+            text-align: left;
+            padding-left: 2mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .tag-id {
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .device-name {
+            font-size: 7px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 28mm;
+            margin-top: 1px;
+        }
+
+        .serial-st {
+            font-size: 7px;
+            font-family: monospace;
+            color: #333;
+            margin-top: 1px;
+        }
+
+        .footer-brand {
+            font-size: 6px;
+            font-weight: bold;
+            margin-top: 1mm;
+            color: #666;
+            text-align: center;
+            width: 100%;
+        }
+
+        @media print {
+            body { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+
+<body onload="window.print()">
+
+    <div class="header">Controle de Patrimônio</div>
+
+    <div class="content-wrapper">
+        <div class="qr-code">
+            <img src="{{ url_for('static', filename='qrcodes/qr_' + e.id|string + '.png') }}" alt="QR Code">
+        </div>
+
+        <div class="info">
+            <div class="tag-id">
+                {{ e.ativo_tag if e.ativo_tag else 'ID: ' + e.id|string }}
+            </div>
+            <div class="device-name">
+                {{ e.marca }} {{ e.hostname }}
+            </div>
+            <div class="serial-st">
+                SN: {{ e.serial_st }}
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-brand">S-INVENTÁRIO SISTEMAS</div>
+
+</body>
+</html>

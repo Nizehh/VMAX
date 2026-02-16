@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - Inventário TI{% endblock %}
+{% block page_title %}Controle de Acesso{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">Usuários do Sistema</h4>
+        <small class="text-muted">Gerencie quem pode acessar o painel administrativo.</small>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuario">
+        <i class="fas fa-plus me-2"></i> Novo Usuário
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">ID</th>
+                    <th>Usuário</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in usuarios %}
+                <tr>
+                    <td class="ps-4 text-muted">#{{ user.id }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                {{ user.username[0].upper() }}
+                            </div>
+                            <strong>{{ user.username }}</strong>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-success bg-opacity-75">Ativo</span></td>
+                    <td class="text-end pe-4">
+                        {% if user.username != 'admin' %}
+                        <a href="/deletar_usuario/{{ user.id }}" 
+                           class="btn btn-outline-danger btn-sm border-0" 
+                           onclick="return confirm('Tem certeza que deseja remover o acesso deste usuário?')">
+                           <i class="fas fa-trash"></i> Remover
+                        </a>
+                        {% else %}
+                        <span class="badge bg-danger">Admin Principal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/usuarios" method="POST" class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Convidar Colaborador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nome de Usuário (Login)</label>
+                    <input type="text" name="username" class="form-control bg-secondary text-white border-0 shadow-none" placeholder="Ex: joao.silva" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">E-mail Corporativo</label>
+                    <input type="email" name="email" class="form-control bg-secondary text-white border-0 shadow-none" placeholder="joao.silva@vmax.com.br" required>
+                    <small class="text-white-50">Um link de ativação será enviado para este endereço.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Perfil de Acesso</label>
+                    <select name="role" class="form-select bg-secondary text-white border-0 shadow-none" required>
+                        <option value="leitor" selected>Leitor (Visualização)</option>
+                        <option value="admin">Administrador (Controle Total)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-light px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary px-4">Enviar Convite</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

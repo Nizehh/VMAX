@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Equipamentos{% endblock %}
+
+{% block content %}
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">Gestão de Equipamentos</h4>
+        <small class="text-muted">Gerencie todo o ciclo de vida dos ativos</small>
+    </div>
+    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="fas fa-plus me-2"></i>Novo Equipamento
+    </button>
+</div>
+
+<style>
+    .card-link {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        display: block; /* Garante que o link ocupe a altura toda */
+        height: 100%;
+    }
+    .card-link:hover {
+        transform: translateY(-5px); /* O card "sobe" um pouquinho */
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="/equipamentos" class="text-decoration-none card-link">
+            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Total Ativos</span>
+                            <h3 class="mb-0 text-dark">{{ stats.total }}</h3>
+                        </div>
+                        <div class="text-primary fs-1"><i class="fas fa-cubes"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="/equipamentos?status=Pronto+para+implantar" class="text-decoration-none card-link">
+            <div class="card border-0 shadow-sm border-start border-4 border-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Disponíveis</span>
+                            <h3 class="mb-0 text-dark">{{ stats.disponivel }}</h3>
+                        </div>
+                        <div class="text-success fs-1"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="/equipamentos?status=Em+uso" class="text-decoration-none card-link">
+            <div class="card border-0 shadow-sm border-start border-4 border-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Em Uso</span>
+                            <h3 class="mb-0 text-dark">{{ stats.em_uso }}</h3>
+                        </div>
+                        <div class="text-info fs-1"><i class="fas fa-user-check"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="/equipamentos?status=Em+manutenção" class="text-decoration-none card-link">
+            <div class="card border-0 shadow-sm border-start border-4 border-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Manutenção</span>
+                            <h3 class="mb-0 text-dark">{{ stats.manutencao }}</h3>
+                        </div>
+                        <div class="text-warning fs-1"><i class="fas fa-tools"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form action="/equipamentos" method="GET" class="row g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Buscar por Tag, Serial ou Responsável..." value="{{ filtros.q }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="categoria" class="form-select">
+                    <option value="">Todas as Categorias</option>
+                    <option value="Notebook / Desktop" {% if filtros.cat == 'Notebook / Desktop' %}selected{% endif %}>Notebook / Desktop</option>
+                    <option value="Monitor" {% if filtros.cat == 'Monitor' %}selected{% endif %}>Monitor</option>
+                    <option value="Celular" {% if filtros.cat == 'Celular' %}selected{% endif %}>Celular</option>
+                    <option value="Periférico" {% if filtros.cat == 'Periférico' %}selected{% endif %}>Periférico</option>
+                    <option value="Licença" {% if filtros.cat == 'Licença' %}selected{% endif %}>Licença</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Todos os Status</option>
+                    <option value="Pronto para implantar" {% if filtros.status == 'Pronto para implantar' %}selected{% endif %}>Disponível</option>
+                    <option value="Em uso" {% if filtros.status == 'Em uso' %}selected{% endif %}>Em Uso</option>
+                    <option value="Em manutenção" {% if filtros.status == 'Em manutenção' %}selected{% endif %}>Manutenção</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid gap-2 d-md-flex">
+                <button type="submit" class="btn btn-primary flex-grow-1">Filtrar</button>
+                <a href="/equipamentos" class="btn btn-outline-secondary" title="Limpar Filtros"><i class="fas fa-undo"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 fw-bold">Distribuição por Status</div>
+            <div class="card-body">
+                <div style="height: 200px;">
+                    <canvas id="chartStatusEquip"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 fw-bold">Top 5 Marcas</div>
+            <div class="card-body">
+                <div style="height: 200px;">
+                    <canvas id="chartMarcas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Ativo</th>
+                    <th>Detalhes</th>
+                    <th>Categoria</th>
+                    <th>Responsável</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in equipamentos %}
+                <tr>
+                    <td class="ps-4">
+                        <span class="fw-bold text-primary">{{ item.ativo_tag or 'S/TAG' }}</span>
+                        <div class="small text-muted">{{ item.serial_st }}</div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='uploads/' + (item.foto if item.foto else 'default.png')) }}" class="rounded me-2" width="40" height="40" style="object-fit: cover;">
+                            <div>
+                                <div class="fw-bold">{{ item.marca }}</div>
+                                <div class="small text-muted">{{ item.hostname }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">{{ item.categoria }}</span></td>
+                    <td>
+                        {% if item.responsavel %}
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 25px; height: 25px; font-size: 10px;">
+                                    {{ item.responsavel.nome[:2].upper() }}
+                                </div>
+                                {{ item.responsavel.nome }}
+                            </div>
+                        {% else %}
+                            <span class="text-muted fst-italic">Estoque</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.status == 'Em uso' %}
+                            <span class="badge bg-primary">Em uso</span>
+                        {% elif item.status == 'Pronto para implantar' %}
+                            <span class="badge bg-success">Disponível</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ item.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group">
+                            {# VERIFICAÇÃO DE SEGURANÇA NO FRONT-END #}
+                            {% if session.get('role') == 'admin' %}
+                                
+                                <button class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+                                {% if not item.colaborador_id %}
+                                    <button class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#outModal{{ item.id }}" title="Checkout">
+                                        <i class="fas fa-sign-out-alt text-primary"></i>
+                                    </button>
+                                {% else %}
+                                    <a href="/checkin/{{ item.id }}" class="btn btn-sm btn-light border" title="Checkin (Devolver)">
+                                        <i class="fas fa-undo text-warning"></i>
+                                    </a>
+                                {% endif %}
+
+                                <a href="/deletar/{{ item.id }}" class="btn btn-sm btn-light border" onclick="return confirm('Excluir este item?')" title="Excluir">
+                                    <i class="fas fa-trash text-danger"></i>
+                                </a>
+
+                            {% else %}
+                                {# O QUE O LEITOR VÊ #}
+                                <span class="badge bg-secondary-subtle text-muted border">Apenas Leitura</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-search fa-2x mb-3"></i>
+                            <p>Nenhum equipamento encontrado com esses filtros.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form action="/cadastrar_ativo" method="POST" enctype="multipart/form-data" class="modal-content shadow border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Novo Ativo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase">Categoria</label>
+                            <select name="categoria" id="categoriaSelect" class="form-select border-2 border-primary fw-bold" required>
+                                <option value="Notebook / Desktop">Notebook / Desktop</option>
+                                <option value="Monitor">Monitor</option>
+                                <option value="Celular">Celular</option>
+                                <option value="Telefonia">Telefonia</option>
+                                <option value="Periférico">Periférico</option>
+                                <option value="Acessório">Acessório</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Ferramenta">Ferramenta</option>
+                                <option value="Licença">Licença</option>
+                            </select>
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="col-md-4" id="div_patrimonio">
+                            <label class="form-label fw-bold small text-uppercase">Patrimônio / TAG</label>
+                            <input type="text" name="ativo" class="form-control" placeholder="Ex: IT-001">
+                        </div>
+
+                        <div class="col-md-4" id="div_serial">
+                            <label id="lbl_serial" class="form-label fw-bold small text-uppercase">Service Tag</label>
+                            <input type="text" name="serial_st" class="form-control">
+                        </div>
+
+                        <div class="col-md-4" id="div_tipo_periferico" style="display:none;">
+                            <label class="form-label fw-bold small text-uppercase text-primary">Tipo</label>
+                            <select name="tipo_periferico" class="form-select">
+                                <option value="Mouse">Mouse</option>
+                                <option value="Teclado">Teclado</option>
+                                <option value="Headset">Headset</option>
+                                <option value="Webcam">Webcam</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6" id="div_marca">
+                            <label class="form-label fw-bold small text-uppercase">Marca</label>
+                            <input type="text" name="marca" class="form-control">
+                        </div>
+
+                        <div class="col-md-6" id="div_modelo">
+                            <label id="lbl_modelo" class="form-label fw-bold small text-uppercase">Modelo</label>
+                            <input type="text" name="nome" class="form-control" required>
+                        </div>
+
+                        <div id="div_celular_extras" class="row g-3 m-0 p-0" style="display:none;">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-primary">IMEI 1</label>
+                                <input type="text" name="imei1" class="form-control border-primary">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-primary">IMEI 2</label>
+                                <input type="text" name="imei2" class="form-control border-primary">
+                            </div>
+                        </div>
+
+                        <div id="div_licenca_extras" class="col-md-12" style="display:none;">
+                            <label class="form-label fw-bold small text-uppercase text-success">Email Atribuído</label>
+                            <input type="email" name="email_licenca" class="form-control border-success" placeholder="usuario@empresa.com.br">
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="col-md-12 mb-2" id="div_tipo_aquisicao">
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="tipo_aquisicao" id="opt_compra" value="Compra" checked>
+                                <label class="btn btn-outline-success" for="opt_compra">Equipamento COMPRADO</label>
+
+                                <input type="radio" class="btn-check" name="tipo_aquisicao" id="opt_locacao" value="Locacao">
+                                <label class="btn btn-outline-primary" for="opt_locacao">Equipamento LOCADO</label>
+                            </div>
+                        </div>
+
+                        <div id="area_compra" class="row g-3 m-0 p-0">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Valor Compra (R$)</label>
+                                <input type="number" step="0.01" name="valor_compra" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase">Data Compra</label>
+                                <input type="date" name="data_compra" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-danger">Fim Garantia</label>
+                                <input type="date" name="garantia_expira" class="form-control border-danger">
+                            </div>
+                        </div>
+
+                        <div id="area_locacao" class="row g-3 m-0 p-0" style="display:none;">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-primary">Valor Mensal (R$)</label>
+                                <input type="number" step="0.01" name="valor_locacao" class="form-control border-primary">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-primary">Início Locação</label>
+                                <input type="date" name="data_locacao" id="data_locacao" class="form-control border-primary">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-uppercase text-primary">Fim Contrato (+36m)</label>
+                                <input type="date" name="vencimento_locacao" id="vencimento_locacao" class="form-control border-primary bg-light" readonly>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mt-3">
+                            <label class="form-label fw-bold small text-uppercase">Link / Pasta NF</label>
+                            <input type="url" name="link_nf" class="form-control">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase">Observações</label>
+                            <textarea name="observacoes" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase">Foto</label>
+                            <input type="file" name="foto" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light" style="background-color: var(--bg-card) !important; border-top-color: var(--border-color);">
+                    <button type="submit" class="btn btn-success px-5 fw-bold">SALVAR CADASTRO</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% for item in equipamentos %}
+<div class="modal fade" id="outModal{{ item.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/checkout/{{ item.id }}" method="POST" class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Entregar Ativo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Entregar <strong>{{ item.hostname }}</strong> ({{ item.ativo_tag }}) para:</p>
+                <select name="colaborador_id" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {% for c in colaboradores %}
+                    <option value="{{ c.id }}">{{ c.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal{{ item.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="/editar/{{ item.id }}" method="POST" class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Editar {{ item.ativo_tag }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" name="nome" class="form-control" value="{{ item.hostname }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Serial</label>
+                        <input type="text" name="serial_st" class="form-control" value="{{ item.serial_st }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observações</label>
+                        <textarea name="observacoes" class="form-control">{{ item.observacoes }}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-warning">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+    // Gráfico de Status (Doughnut)
+    new Chart(document.getElementById('chartStatusEquip'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Disponível', 'Em Uso', 'Manutenção'],
+            datasets: [{
+                data: [{{ stats.disponivel }}, {{ stats.em_uso }}, {{ stats.manutencao }}],
+                backgroundColor: ['#198754', '#0d6efd', '#ffc107'],
+                borderWidth: 0
+            }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+    });
+
+    // Gráfico de Marcas (Bar)
+    new Chart(document.getElementById('chartMarcas'), {
+        type: 'bar',
+        data: {
+            labels: [{% for m in top_marcas.keys() %}'{{ m }}',{% endfor %}],
+            datasets: [{
+                label: 'Quantidade',
+                data: [{% for q in top_marcas.values() %}{{ q }},{% endfor %}],
+                backgroundColor: '#6610f2',
+                borderRadius: 4
+            }]
+        },
+        options: { 
+            maintainAspectRatio: false, 
+            indexAxis: 'y', // Barra horizontal para caber melhor os nomes
+            scales: { x: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+
+{% endblock %}

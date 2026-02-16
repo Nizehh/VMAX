@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Equipamentos{% endblock %}
+
+{% block content %}
+
+
+
+<body class="p-4">
+
+<div class="container">
+
+    <!-- Cabeçalho -->
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">
+            <i class="fas fa-laptop text-primary"></i>
+            Detalhes do Ativo
+        </h3>
+        <a href="/" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Card Informações Principais -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        Informações Gerais
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="info-label">Patrimônio</div>
+                        <div class="info-value">{{ item.ativo_tag or '--' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="info-label">Serial / Service Tag</div>
+                        <div class="info-value">{{ item.serial_st or '--' }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="info-label">Categoria</div>
+                        <div class="info-value">{{ item.categoria }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="info-label">Status</div>
+                        <span class="badge badge-status 
+                            {{ 'bg-success' if item.status == 'Pronto para implantar' else 'bg-primary' }}">
+                            {{ item.status }}
+                        </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="info-label">Modelo / Nome</div>
+                        <div class="info-value">{{ item.hostname }}</div>
+                    </div>
+
+                    <div>
+                        <div class="info-label">Marca</div>
+                        <div class="info-value">{{ item.marca or '--' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Financeiro / Observações -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-invoice-dollar text-primary"></i>
+                        Documentos & Observações
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="info-label">Nota Fiscal</div>
+                        {% if item.link_nf %}
+                            <a href="{{ item.link_nf }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-external-link-alt"></i> Abrir Documento
+                            </a>
+                        {% else %}
+                            <div class="text-muted">Não informado</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div class="info-label">Observações Técnicas</div>
+                        <div class="p-3 bg-light border rounded mt-1">
+                            {{ item.observacoes if item.observacoes else 'Nenhuma observação cadastrada.' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

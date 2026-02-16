@@ -1,0 +1,833 @@
+        :root {
+            /* --- DARK MODE (PADRÃO) --- */
+            --sidebar-width: 260px;
+            --sidebar-bg: #16191d; 
+            --sidebar-border: #2c3035;
+            --header-bg: #1c1f23;
+            --main-bg: #121416;
+            --accent-color: #0d6efd;
+            --text-muted: #adb5bd;
+            --text-main: #ffffff;
+            --card-stats-bg: #1e2227;
+            
+            /* Variáveis de Visibilidade */
+            --link-color: #3d8bfd;      /* Azul mais brilhante para o Dark */
+            --table-text: #e9ecef;     /* Texto claro para tabelas no Dark */
+        }
+
+        [data-bs-theme="light"] {
+            /* --- LIGHT MODE PROFISSIONAL --- */
+            --sidebar-bg: #f8f9fa;
+            --sidebar-border: #e9ecef;
+            --header-bg: #ffffff;
+            --main-bg: #f1f3f5;
+            --text-muted: #6c757d;
+            --text-main: #212529;
+            --accent-color: #0056b3;
+            --card-stats-bg: #ffffff;
+            
+            /* Variáveis de Visibilidade */
+            --link-color: #0a58ca;      /* Azul mais profundo para o Light */
+            --table-text: #212529;      /* Texto escuro para tabelas no Light */
+        }
+
+        /* --- AJUSTES ESPECÍFICOS PARA MODO CLARO --- */
+        
+        /* Títulos e Textos da Sidebar */
+        [data-bs-theme="light"] .sidebar-heading h5 { color: var(--text-main) !important; }
+        [data-bs-theme="light"] .sidebar-heading small { color: var(--text-muted) !important; }
+        
+        /* Itens da Lista na Sidebar */
+        [data-bs-theme="light"] .list-group-item { 
+            color: #495057; 
+            border-radius: 8px;
+        }
+        [data-bs-theme="light"] .list-group-item:hover { 
+            background-color: #e9ecef !important; 
+            color: var(--accent-color); 
+        }
+        
+        /* Navbar Superior */
+        [data-bs-theme="light"] .top-navbar { 
+            background-color: var(--header-bg); 
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+        [data-bs-theme="light"] .navbar-brand, 
+        [data-bs-theme="light"] .top-navbar .fa-bars,
+        [data-bs-theme="light"] .top-navbar .fw-bold,
+        [data-bs-theme="light"] .top-navbar .text-white { 
+            color: var(--text-main) !important; 
+        }
+
+        /* Ajuste do Ícone de Usuário no Navbar */
+        [data-bs-theme="light"] .rounded-circle.bg-secondary {
+            background-color: #e9ecef !important;
+        }
+        [data-bs-theme="light"] .rounded-circle i {
+            color: #6c757d !important;
+        }
+
+        /* Botão Toggle de Menu (Mobile) */
+        [data-bs-theme="light"] #menu-toggle {
+            border-color: #dee2e6;
+            color: #495057;
+        }
+
+        /* Cards de Estatística (Persistência de Estilo) */
+        .card-stats {
+            background-color: var(--card-stats-bg);
+            border: 1px solid var(--sidebar-border);
+            color: var(--text-main);
+        }
+        
+        [data-bs-theme="light"] .card-stats .count {
+            color: var(--text-main);
+        }
+
+        /* Alertas no Modo Claro */
+        [data-bs-theme="light"] .alert {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-main);
+            overflow: hidden;
+            transition: background-color var(--transition-speed) ease;
+        }
+
+        #wrapper { display: flex; width: 100%; height: 100vh; }
+
+        /* Sidebar */
+        #sidebar-wrapper {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: all var(--transition-speed);
+        }
+
+        /* Conteúdo Principal */
+        #page-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            background-color: var(--main-bg);
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Área de Rolagem do Conteúdo */
+        #main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+
+        /* --- ESTILIZAÇÃO DA SIDEBAR --- */
+        .sidebar-heading {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .list-group-item {
+            background: transparent !important;
+            color: var(--text-muted) !important;
+            border: none !important;
+            padding: 12px 24px;
+            margin: 2px 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .list-group-item:hover {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+            color: var(--accent-color) !important;
+            transform: translateX(5px);
+        }
+
+        .list-group-item.active {
+            background-color: var(--accent-color) !important;
+            color: #fff !important;
+        }
+
+        .admin-label {
+            font-size: 0.75rem;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            padding-left: 2rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* --- NAVBAR SUPERIOR --- */
+        .top-navbar {
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--sidebar-border);
+            padding: 0.8rem 1.5rem;
+            flex-shrink: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: calc(-1 * var(--sidebar-width));
+                position: absolute;
+                height: 100%;
+            }
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--main-bg); }
+        ::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #495057; }
+
+        img { max-width: 100%; height: auto; object-fit: contain; }
+
+        /* Cards e Imagens */
+        .card-stats {
+            background-color: var(--header-bg); /* Adaptativo */
+            border: 1px solid var(--sidebar-border);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: var(--text-main);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .card-stats:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: var(--accent-color);
+        }
+        .card-stats i { font-size: 2rem; margin-bottom: 10px; color: var(--accent-color); }
+        .card-stats .count { font-size: 1.5rem; font-weight: 800; color: var(--text-main); }
+        .card-stats .label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .img-equipamento {
+            width: 45px; height: 45px; object-fit: cover;
+            border-radius: 5px; background: #32383e;
+        }
+        
+        /* Ajuste do card normal para Light Mode */
+        [data-bs-theme="light"] .card {
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            opacity: 0.8;
+            color: var(--link-color);
+        }
+
+        /* Breadcrumb (visto no image_51a652.png) */
+        .breadcrumb-item a {
+            color: var(--link-color);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-muted);
+        }
+
+        /* --- AJUSTES DE TABELAS (visto no image_51a652.png) --- */
+        .table {
+            color: var(--table-text) !important;
+        }
+
+        .table thead th {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--text-main);
+            border-bottom: 2px solid var(--sidebar-border);
+        }
+
+        /* Texto de "Ações" (visto no image_aa5d95.png) */
+        .text-actions {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .text-actions a {
+            margin-left: 5px;
+            font-weight: 400;
+        }
+
+        /* Ajuste das Badges (Pronto para implantar / Em uso) */
+        .badge {
+            letter-spacing: 0.5px;
+            padding: 0.5em 0.8em;
+        }
+
+        /* --- NOVAS CORES CORPORATIVAS PARA CARDS --- */
+        /* Cores mais sóbrias que respeitam o modo Dark/Light */
+        .bg-card-notebook { border-top: 3px solid #3d8bfd; }
+        .bg-card-desktop { border-top: 3px solid #6c757d; }
+        .bg-card-monitor { border-top: 3px solid #0dcaf0; }
+        .bg-card-celular { border-top: 3px solid #198754; }
+        .bg-card-telefonia { border-top: 3px solid #ffc107; }
+        .bg-card-periferico { border-top: 3px solid #6610f2; }
+        .bg-card-acessorio { border-top: 3px solid #fd7e14; }
+        .bg-card-hardware { border-top: 3px solid #20c997; }
+        .bg-card-ferramenta { border-top: 3px solid #6f42c1; }
+        .bg-card-licenca { border-top: 3px solid #d63384; }
+
+        /* Ajuste fino nos cards para não ficarem "gigantes" visualmente */
+        .card-dashboard {
+            height: 90px; /* Reduzi um pouco mais para ficar compacto */
+            background-color: var(--card-stats-bg);
+            border: 1px solid var(--sidebar-border);
+            padding: 5px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none !important; /* Remove sublinhado de link */
+        }
+
+        .card-dashboard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Suporte para o ícone de Desktop (Monitor + Gabinete) */
+        .icon-stack {
+            position: relative;
+            display: inline-block;
+            width: 2rem;
+            height: 1.5rem;
+            margin-bottom: 5px;
+        }
+        .icon-stack .fa-desktop { font-size: 1.4rem !important; }
+        .icon-stack .fa-server { 
+            font-size: 0.7rem !important; 
+            position: absolute;
+            bottom: -2px;
+            right: -4px;
+            background: var(--card-stats-bg);
+            padding: 1px;
+        }
+
+        /* Ajuste de texto nos cards */
+        .card-dashboard h5 {
+            font-size: 0.65rem !important; /* Menor e mais discreto */
+            color: var(--text-muted);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-dashboard span {
+            font-size: 1.3rem;
+            color: var(--text-main);
+            line-height: 1;
+        }
+
+        /* Quando estiver no modo claro, se o fundo do card for muito claro, 
+        o ícone e o texto precisam escurecer */
+        body.light-theme .card-icon,
+        body.light-theme .card-text-label,
+        body.light-theme .card-text-count {
+            color: #212529 !important; /* Cor escura para modo claro */
+        }
+
+        /* Caso você queira manter o fundo colorido mas garantir visibilidade */
+        body.light-theme .card.text-white {
+            border: 1px solid rgba(0,0,0,0.1) !important;
+        }
+
+        /* Se você prefere que os ícones fiquem pretos apenas se o card perder a cor: */
+        body.light-theme .card {
+            background-color: var(--bg-card) !important; /* Usa a cor de fundo do tema */
+            color: var(--text-main) !important;
+        }
+
+        /* Estilo Base dos Cards */
+        .category-card {
+            background-color: var(--bg-card, #ffffff); /* Fallback para branco */
+            border-left: 4px solid var(--cat-color) !important;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            background-color: var(--cat-color);
+        }
+
+        /* Cores do Texto e Ícone */
+        .category-card .label-text, 
+        .category-card .count-text {
+            color: var(--text-main, #212529); /* Escuro no claro, claro no escuro */
+        }
+
+        .category-card .icon-box i {
+            color: var(--cat-color);
+        }
+
+        /* Efeito de Hover: Tudo fica branco quando passa o mouse */
+        .category-card:hover .label-text,
+        .category-card:hover .count-text,
+        .category-card:hover .icon-box i {
+            color: #ffffff !important;
+        }
+
+        /* Correção para Modo Claro (Light Theme) */
+        body.light-theme .category-card {
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        body.light-theme .label-text, 
+        body.light-theme .count-text {
+            color: #212529 !important;
+        }
+
+        /* Estilo geral do card para ambos os modos */
+        .category-card {
+            background-color: var(--bg-card); /* Variável que muda no seu JS do modo claro */
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* --- MODO CLARO --- */
+        body.light-theme .card-label, 
+        body.light-theme .card-count {
+            color: #212529 !important; /* Força cinza escuro no modo claro */
+        }
+
+        body.light-theme .category-card {
+            background-color: #ffffff !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        /* --- MODO ESCURO --- */
+        body:not(.light-theme) .card-label,
+        body:not(.light-theme) .card-count {
+            color: #ffffff !important; /* Força branco no modo escuro */
+        }
+
+        /* --- AJUSTES ESPECÍFICOS PARA MODO CLARO --- */
+        
+        /* Títulos e Textos da Sidebar */
+        [data-bs-theme="light"] .sidebar-heading h5 { color: var(--text-main) !important; }
+        [data-bs-theme="light"] .sidebar-heading small { color: var(--text-muted) !important; }
+        
+        /* Itens da Lista na Sidebar */
+        [data-bs-theme="light"] .list-group-item { 
+            color: #495057; 
+            border-radius: 8px;
+        }
+        [data-bs-theme="light"] .list-group-item:hover { 
+            background-color: #e9ecef !important; 
+            color: var(--accent-color); 
+        }
+        
+        /* Navbar Superior */
+        [data-bs-theme="light"] .top-navbar { 
+            background-color: var(--header-bg); 
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+        [data-bs-theme="light"] .navbar-brand, 
+        [data-bs-theme="light"] .top-navbar .fa-bars,
+        [data-bs-theme="light"] .top-navbar .fw-bold,
+        [data-bs-theme="light"] .top-navbar .text-white { 
+            color: var(--text-main) !important; 
+        }
+
+        /* Ajuste do Ícone de Usuário no Navbar */
+        [data-bs-theme="light"] .rounded-circle.bg-secondary {
+            background-color: #e9ecef !important;
+        }
+        [data-bs-theme="light"] .rounded-circle i {
+            color: #6c757d !important;
+        }
+
+        /* Botão Toggle de Menu (Mobile) */
+        [data-bs-theme="light"] #menu-toggle {
+            border-color: #dee2e6;
+            color: #495057;
+        }
+
+        /* Cards de Estatística (Persistência de Estilo) */
+        .card-stats {
+            background-color: var(--card-stats-bg);
+            border: 1px solid var(--sidebar-border);
+            color: var(--text-main);
+        }
+        
+        [data-bs-theme="light"] .card-stats .count {
+            color: var(--text-main);
+        }
+
+        /* Alertas no Modo Claro */
+        [data-bs-theme="light"] .alert {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--main-bg);
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        /* --- ESTRUTURA FLEXBOX --- */
+        #wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        #sidebar-wrapper {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            transition: margin 0.3s ease-in-out, background-color 0.3s ease;
+            flex-shrink: 0;
+            z-index: 1000;
+        }
+
+        /* Conteúdo Principal */
+        #page-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            background-color: var(--main-bg);
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Área de Rolagem do Conteúdo */
+        #main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+
+        /* --- ESTILIZAÇÃO DA SIDEBAR --- */
+        .sidebar-heading {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .list-group-item {
+            background: transparent !important;
+            color: var(--text-muted);
+            border: none;
+            padding: 12px 24px;
+            margin: 2px 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .list-group-item:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .list-group-item.active {
+            background-color: var(--accent-color) !important;
+            color: #fff !important;
+        }
+
+        .admin-label {
+            font-size: 0.75rem;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            padding-left: 2rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* --- NAVBAR SUPERIOR --- */
+        .top-navbar {
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--sidebar-border);
+            padding: 0.8rem 1.5rem;
+            flex-shrink: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: calc(-1 * var(--sidebar-width));
+                position: absolute;
+                height: 100%;
+            }
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--main-bg); }
+        ::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #495057; }
+
+        img { max-width: 100%; height: auto; object-fit: contain; }
+
+        /* Cards e Imagens */
+        .card-stats {
+            background-color: var(--header-bg); /* Adaptativo */
+            border: 1px solid var(--sidebar-border);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: var(--text-main);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .card-stats:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: var(--accent-color);
+        }
+        .card-stats i { font-size: 2rem; margin-bottom: 10px; color: var(--accent-color); }
+        .card-stats .count { font-size: 1.5rem; font-weight: 800; color: var(--text-main); }
+        .card-stats .label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .img-equipamento {
+            width: 45px; height: 45px; object-fit: cover;
+            border-radius: 5px; background: #32383e;
+        }
+        
+        /* Ajuste do card normal para Light Mode */
+        [data-bs-theme="light"] .card {
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            opacity: 0.8;
+            color: var(--link-color);
+        }
+
+        /* Breadcrumb (visto no image_51a652.png) */
+        .breadcrumb-item a {
+            color: var(--link-color);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-muted);
+        }
+
+        /* --- AJUSTES DE TABELAS (visto no image_51a652.png) --- */
+        .table {
+            color: var(--table-text) !important;
+        }
+
+        .table thead th {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--text-main);
+            border-bottom: 2px solid var(--sidebar-border);
+        }
+
+        /* Texto de "Ações" (visto no image_aa5d95.png) */
+        .text-actions {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .text-actions a {
+            margin-left: 5px;
+            font-weight: 400;
+        }
+
+        /* Ajuste das Badges (Pronto para implantar / Em uso) */
+        .badge {
+            letter-spacing: 0.5px;
+            padding: 0.5em 0.8em;
+        }
+
+        /* --- NOVAS CORES CORPORATIVAS PARA CARDS --- */
+        /* Cores mais sóbrias que respeitam o modo Dark/Light */
+        .bg-card-notebook { border-top: 3px solid #3d8bfd; }
+        .bg-card-desktop { border-top: 3px solid #6c757d; }
+        .bg-card-monitor { border-top: 3px solid #0dcaf0; }
+        .bg-card-celular { border-top: 3px solid #198754; }
+        .bg-card-telefonia { border-top: 3px solid #ffc107; }
+        .bg-card-periferico { border-top: 3px solid #6610f2; }
+        .bg-card-acessorio { border-top: 3px solid #fd7e14; }
+        .bg-card-hardware { border-top: 3px solid #20c997; }
+        .bg-card-ferramenta { border-top: 3px solid #6f42c1; }
+        .bg-card-licenca { border-top: 3px solid #d63384; }
+
+        /* Ajuste fino nos cards para não ficarem "gigantes" visualmente */
+        .card-dashboard {
+            height: 90px; /* Reduzi um pouco mais para ficar compacto */
+            background-color: var(--card-stats-bg);
+            border: 1px solid var(--sidebar-border);
+            padding: 5px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none !important; /* Remove sublinhado de link */
+        }
+
+        .card-dashboard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Suporte para o ícone de Desktop (Monitor + Gabinete) */
+        .icon-stack {
+            position: relative;
+            display: inline-block;
+            width: 2rem;
+            height: 1.5rem;
+            margin-bottom: 5px;
+        }
+        .icon-stack .fa-desktop { font-size: 1.4rem !important; }
+        .icon-stack .fa-server { 
+            font-size: 0.7rem !important; 
+            position: absolute;
+            bottom: -2px;
+            right: -4px;
+            background: var(--card-stats-bg);
+            padding: 1px;
+        }
+
+        /* Ajuste de texto nos cards */
+        .card-dashboard h5 {
+            font-size: 0.65rem !important; /* Menor e mais discreto */
+            color: var(--text-muted);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-dashboard span {
+            font-size: 1.3rem;
+            color: var(--text-main);
+            line-height: 1;
+        }
+
+        /* Quando estiver no modo claro, se o fundo do card for muito claro, 
+        o ícone e o texto precisam escurecer */
+        body.light-theme .card-icon,
+        body.light-theme .card-text-label,
+        body.light-theme .card-text-count {
+            color: #212529 !important; /* Cor escura para modo claro */
+        }
+
+        /* Caso você queira manter o fundo colorido mas garantir visibilidade */
+        body.light-theme .card.text-white {
+            border: 1px solid rgba(0,0,0,0.1) !important;
+        }
+
+        /* Se você prefere que os ícones fiquem pretos apenas se o card perder a cor: */
+        body.light-theme .card {
+            background-color: var(--bg-card) !important; /* Usa a cor de fundo do tema */
+            color: var(--text-main) !important;
+        }
+
+        /* Estilo Base dos Cards */
+        .category-card {
+            background-color: var(--bg-card, #ffffff); /* Fallback para branco */
+            border-left: 4px solid var(--cat-color) !important;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            background-color: var(--cat-color);
+        }
+
+        /* Cores do Texto e Ícone */
+        .category-card .label-text, 
+        .category-card .count-text {
+            color: var(--text-main, #212529); /* Escuro no claro, claro no escuro */
+        }
+
+        .category-card .icon-box i {
+            color: var(--cat-color);
+        }
+
+        /* Efeito de Hover: Tudo fica branco quando passa o mouse */
+        .category-card:hover .label-text,
+        .category-card:hover .count-text,
+        .category-card:hover .icon-box i {
+            color: #ffffff !important;
+        }
+
+        /* Correção para Modo Claro (Light Theme) */
+        body.light-theme .category-card {
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        body.light-theme .label-text, 
+        body.light-theme .count-text {
+            color: #212529 !important;
+        }
+
+        /* Estilo geral do card para ambos os modos */
+        .category-card {
+            background-color: var(--bg-card); /* Variável que muda no seu JS do modo claro */
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* --- MODO CLARO --- */
+        body.light-theme .card-label, 
+        body.light-theme .card-count {
+            color: #212529 !important; /* Força cinza escuro no modo claro */
+        }
+
+        body.light-theme .category-card {
+            background-color: #ffffff !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        /* --- MODO ESCURO --- */
+        body:not(.light-theme) .card-label,
+        body:not(.light-theme) .card-count {
+            color: #ffffff !important; /* Força branco no modo escuro */
+        }

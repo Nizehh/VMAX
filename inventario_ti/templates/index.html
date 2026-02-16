@@ -1,0 +1,600 @@
+{% extends "base.html" %}
+
+{% block title %}INVENTÁRIO TI | Dashboard{% endblock %}
+
+{% block content %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0 fw-bold">Painel de TI Corporativo</h4>
+            <small class="text-muted">Gestão de Ativos, Licenças e Ciclo de Vida</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-danger shadow-sm" onclick="location.href='/logs'">
+                <i class="fas fa-shield-alt me-1"></i> Alertas: {{ stats.alertas }}
+            </button>
+            <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="fas fa-plus me-1"></i> Novo Ativo
+            </button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <form action="/" method="GET" class="input-group shadow-sm">
+                <input type="text" name="q" class="form-control border-0" placeholder="Pesquisar por Ativo, Service Tag ou Responsável..." value="{{ search_query }}">
+                <button class="btn btn-primary px-4" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search_query %}
+                    <a href="/" class="btn btn-outline-secondary">Limpar</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="row row-cols-2 row-cols-md-4 row-cols-xl-5 g-3 mb-4">
+        {% for cat_slug, cat_nome, icon in [
+            ('notebooks', 'Notebook', 'fa-laptop'),
+            ('desktops', 'Desktop', 'fa-computer'),
+            ('monitores', 'Monitor', 'fa-display'),
+            ('celulares', 'Celular', 'fa-mobile-screen-button'),
+            ('telefonia', 'Telefonia', 'fa-headset'),
+            ('perifericos', 'Periférico', 'fa-keyboard'),
+            ('acessorios', 'Acessório', 'fa-headphones'),
+            ('hardware', 'Hardware', 'fa-microchip'),
+            ('ferramentas', 'Ferramenta', 'fa-screwdriver-wrench'),
+            ('licencas', 'Licença', 'fa-key')
+        ] %}
+        <div class="col">
+            <a href="{{ url_for('ver_categoria', tipo=cat_nome) }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm category-card">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3 text-center">
+                        <div class="icon-wrapper mb-2">
+                            <i class="fas {{ icon }} fa-2x"></i>
+                        </div>
+                        <div class="fw-bold card-label">{{ cat_nome }}</div>
+                        <div class="h5 mb-0 card-count">{{ resumo[cat_nome] or 0 }}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not search_query %}
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted fw-bold mb-3 text-center">Disponibilidade Geral</h6>
+                    <div style="height: 200px;">
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-muted fw-bold mb-3 text-center">Distribuição de Ativos</h6>
+                    <div style="height: 200px;">
+                        <canvas id="chartCategorias"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm border-0 overflow-hidden">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center bg-white border-bottom">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-2"></i>
+                {% if search_query %}
+                    Resultados para: "{{ search_query }}"
+                {% else %}
+                    Inventário Geral <span class="text-muted ms-2 small">(Patrimônio: R$ {{ stats.valor_patrimonio }})</span>
+                {% endif %}
+            </h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 table-hover">
+                <thead class="table-light text-uppercase" style="font-size: 0.75rem;">
+                    <tr>
+                        <th class="ps-3">TAG/ID</th>
+                        <th>Equipamento</th>
+                        <th>Serial / ST</th>
+                        <th>Garantia</th>
+                        <th>Status</th>
+                        <th>Responsável</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in equipamentos %}
+                    <tr>
+                        <td class="ps-3">
+                            <span class="badge {{ 'bg-secondary' if item.ativo_tag else 'bg-light text-dark border' }} mb-1">
+                                {{ item.ativo_tag if item.ativo_tag else '(Sem Ativo)' }}
+                            </span>
+                            <div class="text-muted" style="font-size: 10px;">ID: #{{ item.id }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='uploads/' + (item.foto if item.foto else 'default.png')) }}" 
+                                     class="rounded shadow-sm me-3" 
+                                     class="rounded shadow-sm me-3" 
+                                     style="width: 45px; height: 45px; object-fit: cover; border: 1px solid #eee;">
+                                <div>
+                                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.marca }} {{ item.hostname }}</div>
+                                    <small class="text-muted">{{ item.categoria }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><code class="text-primary fw-bold" style="font-size: 0.8rem;">{{ item.serial_st or '---' }}</code></td>
+                        <td>
+                            {% if item.garantia_expira %}
+                                <span class="{% if item.garantia_expira < hoje %}text-danger fw-bold{% else %}text-muted{% endif %}" style="font-size: 0.85rem;">
+                                    {{ item.garantia_expira.strftime('%d/%m/%Y') }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted small">---</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill {% if item.status == 'Em uso' %}bg-primary{% else %}bg-success{% endif %}" style="font-size: 0.7rem;">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td class="small">{{ item.responsavel.nome if item.responsavel else '📦 Estoque' }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <a href="/etiqueta/{{ item.id }}" target="_blank" class="btn btn-light border" title="Gerar QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+
+                                {% if item.responsavel_id or item.responsavel %}
+                                    <a href="{{ url_for('gerar_termo', equip_id=item.id) }}" class="btn btn-light border" title="Gerar Termo">
+                                        <i class="fas fa-file-signature text-info"></i>
+                                    </a>
+                                    <a href="/checkin/{{ item.id }}" class="btn btn-light border" title="Devolver para Estoque" onclick="return confirm('Confirmar devolução para o estoque?')">
+                                        <i class="fas fa-box text-success"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-light border" data-bs-toggle="modal" data-bs-target="#outModal{{ item.id }}" title="Entregar para Colaborador">
+                                        <i class="fas fa-sign-out-alt text-primary"></i>
+                                    </button>
+                                {% endif %}
+
+                                <button class="btn btn-light border" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}" title="Editar Ativo">
+                                    <i class="fas fa-edit text-warning"></i>
+                                </button>
+
+                                {% if session.get('tipo')|lower == 'admin' or session.get('user_id') == 1 %}
+                                    <a href="/deletar/{{ item.id }}" class="btn btn-light border" title="Excluir Ativo" onclick="return confirm('Tem certeza que deseja excluir?')">
+                                        <i class="fas fa-trash-alt text-danger"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form action="/cadastrar_ativo" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Novo Cadastro de Ativo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase">Categoria do Equipamento</label>
+                            <select name="categoria" id="categoriaSelect" class="form-select border-primary fw-bold" required>
+                                <option value="Notebook">Notebook</option>
+                                <option value="Desktop">Desktop</option>
+                                <option value="Monitor">Monitor</option>
+                                <option value="Celular">Celular</option>
+                                <option value="Telefonia">Telefonia</option>
+                                <option value="Periférico">Periférico</option>
+                                <option value="Acessório">Acessório</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Ferramenta">Ferramenta</option>
+                                <option value="Licença">Licença</option>
+                            </select>
+                        </div>
+
+                        <hr class="my-3 text-muted">
+
+                        <div class="col-md-4" id="div_patrimonio">
+                            <label class="form-label fw-bold small">PATRIMÔNIO (Opcional)</label>
+                            <input type="text" name="ativo" class="form-control" placeholder="Deixe vazio para (Sem Ativo)">
+                        </div>
+
+                        <div class="col-md-4" id="div_serial">
+                            <label id="lbl_serial" class="form-label fw-bold small">NÚMERO DE SÉRIE / ST</label>
+                            <input type="text" name="serial_st" class="form-control">
+                        </div>
+
+                        <div class="col-md-4" id="div_tipo_periferico" style="display:none;">
+                            <label class="form-label fw-bold small text-primary">TIPO DE PERIFÉRICO</label>
+                            <select name="tipo_periferico" class="form-select border-primary">
+                                <option value="Mouse">Mouse</option>
+                                <option value="Teclado">Teclado</option>
+                                <option value="Headset">Headset</option>
+                                <option value="Webcam">Webcam</option>
+                                <option value="Dockstation">Dockstation</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4" id="div_tipo_telefonia" style="display:none;">
+                            <label class="form-label fw-bold small text-primary">TIPO EQUIP. TELEFONIA</label>
+                            <select name="tipo_telefonia" class="form-select border-primary">
+                                <option value="Telefone IP">Telefone IP</option>
+                                <option value="ATA">ATA</option>
+                                <option value="Headset Telefonia">Headset Telefonia</option>
+                                <option value="Conference">Conference</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6" id="div_marca">
+                            <label class="form-label fw-bold small">MARCA</label>
+                            <input type="text" name="marca" class="form-control">
+                        </div>
+
+                        <div class="col-md-6" id="div_modelo">
+                            <label id="lbl_modelo" class="form-label fw-bold small">MODELO</label>
+                            <input type="text" name="nome" class="form-control" required>
+                        </div>
+
+                        <div id="div_celular_extras" class="row g-3 m-0 p-0" style="display:none;">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-success">IMEI 1</label>
+                                <input type="text" name="imei1" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-success">IMEI 2</label>
+                                <input type="text" name="imei2" class="form-control">
+                            </div>
+                        </div>
+
+                        <div id="div_licenca_extras" class="col-md-12" style="display:none;">
+                            <label class="form-label fw-bold small text-info">EMAIL VINCULADO</label>
+                            <input type="email" name="email_licenca" class="form-control" placeholder="exemplo@dominio.com">
+                        </div>
+
+                        <hr class="my-3 text-muted">
+
+                        <div class="col-md-12 mb-2" id="div_tipo_aquisicao">
+                            <label class="form-label fw-bold small d-block mb-2">MODALIDADE DE AQUISIÇÃO</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="tipo_aquisicao" id="opt_compra" value="Compra" checked>
+                                <label class="btn btn-outline-success" for="opt_compra"><i class="fas fa-shopping-cart me-2"></i>COMPRADO</label>
+
+                                <input type="radio" class="btn-check" name="tipo_aquisicao" id="opt_locacao" value="Locacao">
+                                <label class="btn btn-outline-primary" for="opt_locacao"><i class="fas fa-handshake me-2"></i>LOCADO</label>
+                            </div>
+                        </div>
+
+                        <div id="area_compra" class="row g-3 m-0 p-0">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-success">VALOR COMPRA</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" step="0.01" name="valor_compra" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">DATA DA COMPRA</label>
+                                <input type="date" name="data_compra" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-danger">FIM DA GARANTIA</label>
+                                <input type="date" name="garantia_expira" class="form-control border-danger">
+                            </div>
+                        </div>
+
+                        <div id="area_locacao" class="row g-3 m-0 p-0" style="display:none;">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-primary">VALOR MENSAL</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" step="0.01" name="valor_locacao" class="form-control border-primary">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-primary">INÍCIO LOCAÇÃO</label>
+                                <input type="date" name="data_locacao" id="data_locacao" class="form-control border-primary">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-primary">FIM CONTRATO (+36M)</label>
+                                <input type="date" name="vencimento_locacao" id="vencimento_locacao" class="form-control bg-light border-primary" readonly>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mt-3">
+                            <label class="form-label small fw-bold">LINK NOTA FISCAL / DRIVE</label>
+                            <input type="url" name="link_nf" class="form-control" placeholder="https://...">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">OBSERVAÇÕES TÉCNICAS</label>
+                            <textarea name="observacoes" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">FOTO DO ATIVO</label>
+                            <input type="file" name="foto" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm">SALVAR CADASTRO</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% for item in equipamentos %}
+    <div class="modal fade" id="outModal{{ item.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="/checkout/{{ item.id }}" method="POST" class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Atribuir Equipamento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-light border">
+                        <small class="text-muted d-block">Equipamento:</small>
+                        <strong class="text-dark">{{ item.marca }} {{ item.hostname }}</strong>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Selecione o Colaborador:</label>
+                        <select name="colaborador_id" class="form-select border-primary" required>
+                            <option value="">-- Buscar Colaborador --</option>
+                            {% for c in colaboradores %}
+                            <option value="{{ c.id }}">{{ c.nome }} ({{ c.setor }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary w-100">Confirmar Entrega</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editModal{{ item.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form action="/editar/{{ item.id }}" method="POST" class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold">Editar Patrimônio #{{ item.id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">TAG / Patrimônio</label>
+                            <input type="text" name="ativo" class="form-control" value="{{ item.ativo_tag or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Serial / Service Tag</label>
+                            <input type="text" name="serial_st" class="form-control" value="{{ item.serial_st }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Marca</label>
+                            <input type="text" name="marca" class="form-control" value="{{ item.marca }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Modelo</label>
+                            <input type="text" name="nome" class="form-control" value="{{ item.hostname }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Link NF/Drive</label>
+                            <input type="text" name="link_nf" class="form-control" value="{{ item.link_nf or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Fim Garantia</label>
+                            <input type="date" name="garantia_expira" class="form-control" value="{{ item.garantia_expira }}">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Observações</label>
+                            <textarea name="observacoes" class="form-control" rows="3">{{ item.observacoes or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning px-4 fw-bold">Atualizar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        // --- CONFIGURAÇÃO DOS GRÁFICOS (CHART.JS) ---
+        const ctxStatus = document.getElementById('chartStatus');
+        if (ctxStatus) {
+            new Chart(ctxStatus.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Disponível', 'Em Uso'],
+                    datasets: [{
+                        data: [{{ stats.disponivel or 0 }}, {{ stats.em_uso or 0 }}],
+                        backgroundColor: ['#198754', '#0d6efd'],
+                        hoverOffset: 4,
+                        borderWidth: 0
+                    }]
+                },
+                options: { 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        const ctxCat = document.getElementById('chartCategorias');
+        if (ctxCat) {
+            new Chart(ctxCat.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    // Isso garante que as labels venham exatamente como estão no dicionário resumo
+                    labels: [{% for k in resumo.keys() %}"{{ k }}",{% endfor %}],
+                    datasets: [{
+                        label: 'Total de Ativos',
+                        data: [{% for v in resumo.values() %}{{ v }},{% endfor %}],
+                        backgroundColor: '#0d6efd',
+                        borderRadius: 6
+                    }]
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { stepSize: 1 }, // Força números inteiros no eixo Y
+                            grid: { color: 'rgba(0,0,0,0.05)' } 
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- LÓGICA DO FORMULÁRIO DINÂMICO ---
+        const catSelect = document.getElementById('categoriaSelect');
+        
+        // Elementos Divs/Campos
+        const divPatrimonio = document.getElementById('div_patrimonio');
+        const divSerial = document.getElementById('div_serial');
+        const divMarca = document.getElementById('div_marca');
+        const divModelo = document.getElementById('div_modelo');
+        
+        // Labels dinâmicas
+        const lblSerial = document.getElementById('lbl_serial');
+        const lblModelo = document.getElementById('lbl_modelo');
+        
+        // Áreas extras
+        const divCelularExtras = document.getElementById('div_celular_extras');
+        const divLicencaExtras = document.getElementById('div_licenca_extras');
+        const divTipoPeriferico = document.getElementById('div_tipo_periferico');
+        const divTipoTelefonia = document.getElementById('div_tipo_telefonia');
+        const divTipoAquisicao = document.getElementById('div_tipo_aquisicao');
+        
+        const areaCompra = document.getElementById('area_compra');
+        const areaLocacao = document.getElementById('area_locacao');
+
+        function atualizarFormulario() {
+            const cat = catSelect.value;
+            
+            // 1. Resetar visibilidade padrão (esconder específicos)
+            divPatrimonio.style.display = 'block';
+            divSerial.style.display = 'block';
+            divMarca.style.display = 'block';
+            divModelo.style.display = 'block';
+            divTipoAquisicao.style.display = 'block';
+            
+            divCelularExtras.style.display = 'none';
+            divLicencaExtras.style.display = 'none';
+            divTipoPeriferico.style.display = 'none';
+            divTipoTelefonia.style.display = 'none';
+
+            // Resetar labels para o padrão
+            lblSerial.innerText = 'NÚMERO DE SÉRIE';
+            lblModelo.innerText = 'MODELO';
+
+            // 2. Lógica Específica por Categoria
+            switch(cat) {
+                case 'Notebook':
+                case 'Desktop':
+                case 'Monitor':
+                    lblSerial.innerText = 'SERVICE TAG';
+                    // Exibe: Pat, ST, Marca, Modelo (já estão visíveis por padrão)
+                    break;
+                
+                case 'Celular':
+                    divSerial.style.display = 'block'; // Mostra Serial
+                    divCelularExtras.style.display = 'flex'; // Mostra IMEI 1 e 2
+                    // Exibe: Pat, Marca, Modelo, Serial, IMEIs
+                    break;
+                
+                case 'Telefonia':
+                    divTipoTelefonia.style.display = 'block'; // Mostra tipo (Telefone, ATA...)
+                    // Exibe: Pat, Serial, Marca, Tipo, Modelo
+                    break;
+                
+                case 'Periférico':
+                    divSerial.style.display = 'none'; // Periférico genérico não pede serial aqui, mas pede tipo
+                    divTipoPeriferico.style.display = 'block';
+                    // Acessa tipo e mantem Pat (se tiver), marca, modelo
+                    break;
+                
+                case 'Acessório':
+                case 'Ferramenta':
+                    divSerial.style.display = 'none'; // Esconde Serial
+                    // Exibe: Pat (se tiver), Marca, Modelo
+                    break;
+                
+                case 'Hardware':
+                    // Exibe: Pat (se tiver), Serial, Marca, Modelo (padrão)
+                    break;
+                
+                case 'Licença':
+                    divPatrimonio.style.display = 'none';
+                    divMarca.style.display = 'none';
+                    divTipoAquisicao.style.display = 'block';
+                    lblModelo.innerText = 'NOME DO SOFTWARE';
+                    lblSerial.innerText = 'CHAVE DE ATIVAÇÃO / KEY';
+                    divLicencaExtras.style.display = 'block'; // Email
+                    break;
+            }
+        }
+
+        function toggleFinanceiro() {
+            const isLocacao = document.getElementById('opt_locacao').checked;
+            areaCompra.style.display = isLocacao ? 'none' : 'flex';
+            areaLocacao.style.display = isLocacao ? 'flex' : 'none';
+        }
+
+        // --- CÁLCULO DE VENCIMENTO DE LOCAÇÃO ---
+        const dtLocacao = document.getElementById('data_locacao');
+        if (dtLocacao) {
+            dtLocacao.addEventListener('change', function() {
+                const dataInicio = new Date(this.value);
+                if(!isNaN(dataInicio)) {
+                    dataInicio.setMonth(dataInicio.getMonth() + 36);
+                    document.getElementById('vencimento_locacao').value = dataInicio.toISOString().split('T')[0];
+                }
+            });
+        }
+
+        // Inicialização de Listeners
+        if (catSelect) {
+            catSelect.addEventListener('change', atualizarFormulario);
+            document.querySelectorAll('input[name="tipo_aquisicao"]').forEach(radio => {
+                radio.addEventListener('change', toggleFinanceiro);
+            });
+            atualizarFormulario(); // Rodar no load
+            toggleFinanceiro();
+        }
+    </script>
+{% endblock %}

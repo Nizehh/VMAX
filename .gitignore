@@ -1,0 +1,12 @@
+# Banco de dados e Chaves
+inventario.db
+secret.key
+
+# Pastas de imagens geradas e uploads
+static/qrcodes/
+static/uploads/
+!static/uploads/default.png
+
+# Cache do Python
+__pycache__/
+*.pyc

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4; margin: 0; }
+        body { font-family: 'Arial', sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
+        
+        /* Barra de ferramentas fixa no topo */
+        .no-print { 
+            background: #333; 
+            padding: 15px; 
+            text-align: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Espaço entre os botões */
+        }
+
+        .btn-vmax {
+            min-width: 180px;
+            padding: 12px 20px;
+            cursor: pointer;
+            background: #ff6b00;
+            color: white !important;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-vmax:hover {
+            background: #e56000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-print {
+            padding: 10px 25px; 
+            cursor: pointer; 
+            background: #ff6b00; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn-print:hover { background: #e56000; }
+
+        .btn-back {
+            color: #ccc; 
+            margin-left: 20px; 
+            text-decoration: none; 
+            font-size: 14px;
+        }
+
+        .btn-back:hover { color: white; }
+
+        /* Simulação da folha A4 */
+        .page {
+            width: 210mm; min-height: 297mm;
+            padding: 20mm; margin: 20mm auto;
+            background: white;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .watermark {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.03; width: 80%; z-index: 0;
+            pointer-events: none;
+        }
+
+        .header { text-align: center; margin-bottom: 50px; position: relative; z-index: 1; }
+        .logo { width: 200px; margin-bottom: 20px; }
+        
+        .doc-title { 
+            font-size: 14pt; font-weight: bold; text-align: center;
+            margin-bottom: 40px; text-decoration: underline;
+        }
+
+        .text-content { 
+            font-size: 11pt; line-height: 1.6; text-align: justify; 
+            white-space: pre-wrap;
+            margin-bottom: 40px;
+        }
+
+        .footer-info { margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .col-sign { border-top: 1px solid #000; padding-top: 10px; text-align: center; }
+        .data-local { text-align: right; margin-bottom: 60px; font-weight: bold; }
+
+        @media print {
+            body { background: none; }
+            .page { margin: 0; box-shadow: none; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="display: flex; justify-content: center; gap: 15px; background: #333; padding: 15px; position: sticky; top: 0; z-index: 1000;">
+    
+        <a href="{{ url_for('index') }}" class="btn-vmax">
+            <i class="fas fa-save"></i> SALVAR
+        </a>
+
+        <button onclick="window.print()" class="btn-vmax">
+            <i class="fas fa-print"></i> IMPRIMIR
+        </button>
+        
+        <a href="{{ url_for('listar_todos_termos') }}" class="btn-vmax">
+            <i class="fas fa-history"></i> HISTÓRICO
+        </a>
+        
+        <a href="/equipamentos" class="btn-vmax">
+            <i class="fas fa-arrow-left"></i> VOLTAR
+        </a>
+    </div>
+
+    <div class="page">
+        <img src="{{ url_for('static', filename='LOGO_VMAX_FUNDO.png') }}" class="watermark">
+
+        <div class="header">
+            <img src="{{ url_for('static', filename='LOGO LARANJA.png') }}" class="logo">
+            <div style="color: #ee7511; font-weight: bold; font-size: 9pt;">VOCÊ AO MÁXIMO</div>
+        </div>
+
+        <div class="doc-title">
+            TERMO DE RECEBIMENTO E RESPONSABILIDADE SOBRE<br>
+            UTILIZAÇÃO E CONSERVAÇÃO DO EQUIPAMENTO
+        </div>
+
+        <div class="text-content text-justify">
+{{ termo.conteudo }}
+        </div>
+
+        <div class="data-local">
+            ITATIBA, {{ termo.data_geracao.strftime('%d de %B de %Y') }}
+        </div>
+
+        <div class="footer-info">
+            <div class="col-sign">
+                <strong>{{ colaborador.nome.upper() if colaborador else "COLABORADOR" }}</strong><br>
+                <span style="font-size: 10pt;">CPF: ________________________________</span>
+            </div>
+
+            <div class="col-sign">
+                <strong>VMX DIGITAL DO BRASIL</strong><br>
+                <span style="font-size: 10pt;">Responsável TI / RH</span>
+            </div>
+        </div>
+    </div>
+    <script>
+    function salvarTermo() {
+        // Como o termo já é salvo ao ser gerado, este botão serve como confirmação
+        alert("Termo de Responsabilidade salvo com sucesso no banco de dados!");
+    }
+    </script>
+</body>
+</html>

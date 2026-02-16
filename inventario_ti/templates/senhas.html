@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* Estilo das células de senha clicáveis */
+    table.table-dark code {
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        color: #e0e0e0; /* Cinza claro suave, mais elegante que o amarelo */
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+    }
+    
+    table.table-dark td:hover code {
+        background: rgba(238, 117, 17, 0.15); /* Laranja sutil no fundo */
+        color: #ee7511; /* Texto assume a cor da marca no hover */
+        border: 1px solid #ee7511;
+    }
+
+    /* Ajuste nos inputs para seguir o padrão do print */
+    .form-control, .form-select {
+        background-color: #1a232e !important; /* Azul marinho muito escuro do print */
+        border: 1px solid #343a40 !important;
+        color: #fff !important;
+    }
+
+    .form-control:focus {
+        border-color: #ee7511 !important;
+        box-shadow: 0 0 0 0.25 row rgba(0, 0, 0, 0.25);
+    }
+
+    /* Cabeçalho da tabela seguindo a cor sólida do sistema */
+    .thead-vmax {
+        background-color: #ee7511; /* Cinza escuro sólido */
+        border-bottom: 2px solid #000000;
+    }
+
+    .setor-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 4px;
+        background-color: #37373762; /* Fundo laranja bem sutil */
+        border: 1px solid #ee7511; /* Borda laranja sólida */
+        color: #ee7511; /* Texto laranja */
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Ajuste na linha para não embolar com o nome */
+    .user-info-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white fw-bold">Gerenciamento de Contas por Setor</h2>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('relatorio_pdf') }}" class="btn btn-outline-light btn-sm shadow-sm">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
+            <button class="btn btn-warning shadow-sm fw-bold" onclick="abrirModalNovo()" style="background-color: #ee7511; border: none; color: white;">
+                <i class="fas fa-user-plus"></i> Novo Cadastro
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-xl-7 col-lg-6">
+            <div class="card bg-dark border-secondary h-100 shadow-sm">
+                <div class="card-body">
+                    <form class="row g-2" method="GET" action="{{ url_for('gerenciar_senhas') }}">
+                        <div class="col-md-7">
+                            <input type="text" name="q" class="form-control" 
+                                   placeholder="Pesquisar nome, e-mail ou domínio..." value="{{ request.args.get('q', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="setor" class="form-select">
+                                <option value="">Todos os Setores</option>
+                                {% for s in setores %}
+                                <option value="{{ s }}" {% if request.args.get('setor') == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-outline-light w-100">Buscar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5 col-lg-6">
+            <div class="card bg-dark border-secondary h-100 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <form action="{{ url_for('importar_csv') }}" method="POST" enctype="multipart/form-data" class="w-100">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control form-control-sm" accept=".csv" required>
+                            <button class="btn btn-success btn-sm px-3" type="submit">
+                                <i class="fas fa-upload"></i> Importar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive card bg-dark border-0 shadow-lg">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead class="text-center thead-vmax">
+                <tr>
+                    <th class="py-3 fw-normal text-muted">Usuário</th>
+                    <th class="py-3 fw-normal text-muted">Status</th>
+                    <th class="py-3 fw-normal text-muted">E-mail</th>
+                    <th class="py-3 fw-normal text-muted">Senha E-mail</th>
+                    <th class="py-3 fw-normal text-muted">Senha AD</th>
+                    <th class="py-3 fw-normal text-muted">Domínio</th>
+                    <th class="py-3 fw-normal text-muted">Senha SAT</th>
+                    <th class="py-3 fw-normal text-muted">Ramal</th>
+                    <th class="py-3 fw-normal text-muted">Senha Ramal</th>
+                    <th class="py-3 fw-normal text-muted">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in senhas %}
+                <tr class="text-center border-secondary">
+                    <td class="text-start ps-3">
+                        <div class="user-info-container">
+                            <span class="fw-bold text-white" style="font-size: 0.95rem;">{{ c.usuario_nome }}</span>
+                            <span class="setor-badge">{{ c.setor }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {% if c.status == 'LIVRE' %}bg-success{% else %}bg-primary{% endif %} rounded-pill" style="font-size: 0.65rem; opacity: 0.8;">
+                            {{ c.status }}
+                        </span>
+                    </td>
+                    <td class="text-muted small">{{ c.email or '-' }}</td>
+                    
+                    <td onclick="copiarTexto('{{ c.senha_email_dec }}')" style="cursor: pointer;" title="Clique para copiar">
+                        <code>{{ c.senha_email_dec or '-' }}</code>
+                    </td>
+                    <td onclick="copiarTexto('{{ c.senha_ad_dec }}')" style="cursor: pointer;" title="Clique para copiar">
+                        <code>{{ c.senha_ad_dec or '-' }}</code>
+                    </td>
+                    
+                    <td class="small text-muted">{{ c.usuario_dominio or '-' }}</td>
+                    
+                    <td onclick="copiarTexto('{{ c.senha_sat_dec }}')" style="cursor: pointer;" title="Clique para copiar">
+                        <code>{{ c.senha_sat_dec or '-' }}</code>
+                    </td>
+                    
+                    <td><span class="text-info fw-bold">{{ c.ramal or '-' }}</span></td>
+                    
+                    <td onclick="copiarTexto('{{ c.senha_ramal_dec }}')" style="cursor: pointer;" title="Clique para copiar">
+                        <code>{{ c.senha_ramal_dec or '-' }}</code>
+                    </td>
+
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-link text-warning p-0 me-2" title="Editar"
+                                onclick="editarConta('{{ c.id }}', '{{ c.usuario_nome }}', '{{ c.setor }}', '{{ c.status }}', '{{ c.email }}', '{{ c.senha_email_dec }}', '{{ c.senha_ad_dec }}', '{{ c.usuario_dominio }}', '{{ c.senha_sat_dec }}', '{{ c.ramal }}', '{{ c.senha_ramal_dec }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="{{ url_for('deletar_senha', id=c.id) }}" class="btn btn-link text-danger p-0" 
+                               onclick="return confirm('Excluir credenciais de {{ c.usuario_nome }}?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConta" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ url_for('salvar_senha') }}" method="POST" class="modal-content bg-dark text-white border-secondary">
+            <div class="modal-header" style="border-bottom: 3px solid #ee7511;">
+                <h5 class="modal-title fw-bold" id="modalTitle">Cadastrar Credenciais</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" name="id" id="field_id">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Nome do Usuário</label>
+                        <input type="text" name="usuario_nome" id="field_usuario_nome" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Setor</label>
+                        <input type="text" name="setor" id="field_setor" class="form-control" required list="listaSetores">
+                        <datalist id="listaSetores">
+                            <option value="Financeiro">
+                            <option value="RH">
+                            <option value="TI">
+                            <option value="Vendas">
+                        </datalist>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Status</label>
+                        <select name="status" id="field_status" class="form-select">
+                            <option value="EM USO">EM USO</option>
+                            <option value="LIVRE">LIVRE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">E-mail Corporativo</label>
+                        <input type="email" name="email" id="field_email" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Senha E-mail</label>
+                        <input type="text" name="senha_email" id="field_senha_email" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Senha AD</label>
+                        <input type="text" name="senha_ad" id="field_senha_ad" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Usuário Domínio</label>
+                        <input type="text" name="usuario_dominio" id="field_usuario_dominio" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Senha SAT</label>
+                        <input type="text" name="senha_sat" id="field_senha_sat" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Ramal</label>
+                        <input type="text" name="ramal" id="field_ramal" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Senha Ramal</label>
+                        <input type="text" name="senha_ramal" id="field_senha_ramal" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="submit" class="btn btn-warning w-100 fw-bold py-2" style="background-color: #ee7511; border: none; color: white;">
+                    CONFIRMAR E CRIPTOGRAFAR
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function copiarTexto(texto) {
+    if (!texto || texto === '-' || texto === '******') return;
+    
+    navigator.clipboard.writeText(texto).then(() => {
+        const aviso = document.createElement('div');
+        aviso.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+        aviso.style = `
+            position: fixed; top: 20px; right: 20px; 
+            background: #ee7511; color: white; padding: 12px 25px; 
+            border-radius: 8px; z-index: 9999; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: opacity 0.5s;
+        `;
+        document.body.appendChild(aviso);
+        setTimeout(() => {
+            aviso.style.opacity = '0';
+            setTimeout(() => aviso.remove(), 500);
+        }, 1200);
+    });
+}
+
+function abrirModalNovo() {
+    document.getElementById('modalTitle').innerText = "Cadastrar Credenciais de Setor";
+    document.getElementById('field_id').value = "";
+    document.querySelector('#modalConta form').reset();
+    new bootstrap.Modal(document.getElementById('modalConta')).show();
+}
+
+function editarConta(id, nome, setor, status, email, s_email, s_ad, u_dom, s_sat, ramal, s_ramal) {
+    document.getElementById('modalTitle').innerText = "Editar Credenciais: " + nome;
+    document.getElementById('field_id').value = id;
+    document.getElementById('field_usuario_nome').value = nome;
+    document.getElementById('field_setor').value = setor;
+    document.getElementById('field_status').value = status;
+    document.getElementById('field_email').value = email;
+    document.getElementById('field_senha_email').value = s_email;
+    document.getElementById('field_senha_ad').value = s_ad;
+    document.getElementById('field_usuario_dominio').value = u_dom;
+    document.getElementById('field_senha_sat').value = s_sat;
+    document.getElementById('field_ramal').value = ramal;
+    document.getElementById('field_senha_ramal').value = s_ramal;
+    new bootstrap.Modal(document.getElementById('modalConta')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}INVENTÁRIO TI{% endblock %}</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}?v=1" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}?v=1" type="image/x-icon">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+       
+        :root {
+            /* --- CONFIGURAÇÕES BASE --- */
+            --sidebar-width: 260px;
+            --transition-speed: 0.3s;
+            
+            /* --- DARK MODE (PADRÃO) --- */
+            --sidebar-bg: #16191d; 
+            --sidebar-border: #2c3035;
+            --header-bg: #1c1f23;
+            --main-bg: #121416;
+            --accent-color: #0d6efd; /* Azul Real */
+            --text-main: #ffffff;
+            --text-muted: #adb5bd;
+            --card-stats-bg: #1e2227;
+            --link-color: #3d8bfd;
+            --table-text: #e9ecef;
+        }
+
+        /* --- MODO CLARO (LIGHT THEME) --- */
+        [data-bs-theme="light"], body.light-theme {
+            --sidebar-bg: #f8f9fa;
+            --sidebar-border: #dee2e6;
+            --header-bg: #ffffff;
+            --main-bg: #f1f3f5;
+            --accent-color: #0056b3;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --card-stats-bg: #ffffff;
+            --link-color: #0a58ca;
+            --table-text: #212529;
+        }
+
+        /* --- AJUSTES GERAIS DE TEMA --- */
+        [data-bs-theme="light"] .sidebar-heading h5 { color: var(--text-main) !important; }
+        [data-bs-theme="light"] .sidebar-heading small { color: var(--text-muted) !important; }
+        [data-bs-theme="light"] .top-navbar .fa-bars,
+        [data-bs-theme="light"] .top-navbar .fw-bold { color: var(--text-main) !important; }
+
+        /* --- ESTRUTURA E ROLAGEM (CORREÇÃO CRÍTICA) --- */
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--main-bg);
+            color: var(--text-main);
+            overflow: hidden; /* Trava a rolagem do corpo principal */
+            height: 100vh;
+            margin: 0;
+        }
+
+        #wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar-wrapper {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: all var(--transition-speed);
+            flex-shrink: 0; /* Impede que a sidebar encolha */
+        }
+
+        /* AQUI ESTÁ A MÁGICA DA ROLAGEM */
+        #page-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto; /* Permite rolar apenas o conteúdo */
+            background-color: var(--main-bg);
+            width: 100%;
+        }
+
+        .container-fluid {
+            padding: 20px;
+            width: 100%;
+        }
+
+        /* --- LOGO PERFEITA --- */
+        .img-logo-sidebar {
+            width: 32px;      
+            height: 32px;     
+            object-fit: contain; /* Impede a imagem de esticar */
+            border-radius: 4px; 
+        }
+
+        .sidebar-heading {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- CARDS E INTERFACE --- */
+        .top-navbar {
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--sidebar-border);
+            padding: 0.8rem 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .category-card {
+            background-color: var(--card-stats-bg) !important;
+            border: 1px solid var(--sidebar-border) !important;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none !important;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .category-card i {
+            color: var(--accent-color);
+            font-size: 2rem;
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        .category-card:hover {
+            background-color: var(--accent-color) !important;
+            transform: translateY(-5px);
+            border-color: var(--accent-color) !important;
+        }
+
+        /* Força branco no hover */
+        .category-card:hover i,
+        .category-card:hover .card-label,
+        .category-card:hover .card-count {
+            color: #ffffff !important;
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .card-count {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        /* --- MENUS E TABELAS --- */
+        .list-group-item {
+            background: transparent !important;
+            color: var(--text-muted) !important;
+            border: none !important;
+            padding: 12px 24px;
+            margin: 2px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .list-group-item:hover {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+            color: var(--accent-color) !important;
+            transform: translateX(5px);
+        }
+
+        .table { color: var(--table-text) !important; }
+        .table thead th {
+            background-color: rgba(0,0,0,0.02);
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--sidebar-border);
+        }
+          .sidebar-heading {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .list-group-item {
+            background: transparent !important;
+            color: var(--text-muted) !important;
+            border: none !important;
+            padding: 12px 24px;
+            margin: 2px 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .list-group-item:hover {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+            color: var(--accent-color) !important;
+            transform: translateX(5px);
+        }
+
+        .list-group-item.active {
+            background-color: var(--accent-color) !important;
+            color: #fff !important;
+        }
+
+        .admin-label {
+            font-size: 0.75rem;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            padding-left: 2rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* Correção da Rolagem (O segredo para não ficar estático) */
+        #page-content-wrapper {
+            flex: 1;
+            height: 100vh;
+            overflow-y: auto; /* Permite rolar apenas o conteúdo da direita */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Badge de destaque para o nome do usuário no log */
+        .text-accent {
+            color: var(--accent-color) !important;
+        }
+
+        /* Estilo profissional para a área do Usuário na Topbar */
+        .avatar-wrapper {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            transition: transform 0.2s;
+        }
+
+        .avatar-wrapper:hover {
+            transform: scale(1.05);
+        }
+
+        .avatar-img-top {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .avatar-initials-top {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4e73df, #1c2f54);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Animação suave para o Dropdown */
+        .animate {
+            animation-duration: 0.2s;
+            animation-fill-mode: both;
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(1rem); opacity: 0; }
+            100% { transform: translateY(0rem); opacity: 1; }
+        }
+
+        .slideIn { animation-name: slideIn; }
+
+        /* Ajuste do Dropdown no tema escuro/claro */
+        .dropdown-menu {
+            border-radius: 12px;
+            padding: 0.5rem;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        /* Ajuste para o navbar-brand */
+        .top-navbar {
+            background-color: transparent !important;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Container da foto no topo */
+        .avatar-wrapper {
+            position: relative;
+            width: 45px;  /* Aumentado de 35px/40px para 45px */
+            height: 45px;
+            transition: transform 0.2s;
+        }
+
+        .avatar-wrapper:hover {
+            transform: scale(1.05);
+        }
+
+        /* Imagem de perfil propriamente dita */
+        .avatar-img-top {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 107, 0, 0.3); /* Borda laranja suave */
+        }
+
+        /* Círculo quando não tem foto (onde fica o bonequinho) */
+        .avatar-initials-top {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #373737 0%, #0f172a 100%);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar-wrapper {
+            width: 48px;   /* Tamanho maior solicitado */
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-img-top {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--primary-color, #ee7511);
+        }
+
+        .avatar-initials-top {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
+            border-radius: 50%;
+            border: 2px solid #ee7511; /* Borda laranja para combinar */
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="wrapper">
+        
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading py-4 border-bottom border-secondary border-opacity-25">
+                <a href="{{ url_for('index') }}" class="text-decoration-none d-flex flex-column align-items-center text-center px-3">
+                    <img src="{{ url_for('static', filename='LOGO LARANJA.png') }}" 
+                        alt="VMAX" 
+                        style="width: 120px; height: auto; margin-bottom: 10px;" 
+                        class="img-fluid"
+                        onerror="this.style.display='none'">
+                    
+                    <div class="mt-1">
+                        <h5 class="mb-0 fw-bold text-white" style="letter-spacing: 1px; font-size: 1.1rem;">TI VMAX</h5>
+                        <small class="text-white-50 d-block" style="font-size: 0.75rem;">Gestão de Equipamentos</small>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="list-group list-group-flush mt-3 flex-grow-1">
+                <a href="/" class="list-group-item">
+                    <i class="fas fa-chart-line me-3 fa-fw"></i>Dashboard
+                </a>
+                
+                <a href="/equipamentos" class="list-group-item">
+                    <i class="fas fa-laptop me-3 fa-fw"></i>Equipamentos
+                </a>
+
+                {% if session['role'] == 'admin' %}
+                    <div class="admin-label">Administração</div>
+
+                    <a href="/colaboradores" class="list-group-item">
+                        <i class="fas fa-users me-3 fa-fw"></i>Colaboradores
+                    </a>
+
+                    <a href="/usuarios" class="list-group-item">
+                        <i class="fas fa-user-lock me-3 fa-fw"></i>Usuários
+                    </a>
+
+                    <a href="/logs" class="list-group-item">
+                        <i class="fas fa-clipboard-list me-3 fa-fw"></i>Logs
+                    </a>
+
+                    <a href="/senhas" class="list-group-item">
+                        <i class="fas fa-users me-3 fa-key"></i>Acessos
+                    </a>
+
+                {% endif %}
+            </div>
+
+            <div class="p-3 border-top border-secondary border-opacity-25" style="background-color: rgba(0,0,0,0.1);">
+                
+                <button id="theme-toggle" class="btn btn-outline-secondary w-100 mb-2 d-flex align-items-center justify-content-center border-opacity-50">
+                    <i class="fas fa-moon me-2"></i> <span id="theme-text">Modo Escuro</span>
+                </button>
+
+                <a href="/logout" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center">
+                    <i class="fas fa-power-off me-2"></i> Encerrar Sessão
+                </a>
+            </div>
+        </div>
+        
+        <div id="page-content-wrapper">
+            
+            <nav class="navbar navbar-expand-lg top-navbar py-3">
+                <div class="container-fluid p-0">
+                    
+                    <button class="btn btn-outline-secondary d-md-none me-3" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+
+                    <span class="navbar-brand mb-0 h1 fs-5 text-white fw-bold">
+                        {% block page_title %}{% endblock %}
+                    </span>
+                    
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                                
+                                <div class="text-end me-3 d-none d-sm-block lh-1">
+                                    <div class="fw-bold text-white small mb-1">
+                                        {{ session['username'] }}
+                                    </div>
+                                    {% if session['role'] == 'admin' %}
+                                        <span class="badge bg-danger bg-opacity-75 text-white border border-danger" style="font-size: 0.65rem; letter-spacing: 0.5px;">ADMINISTRADOR</span>
+                                    {% else %}
+                                        <span class="badge bg-info bg-opacity-75 text-white border border-info" style="font-size: 0.65rem; letter-spacing: 0.5px;">LEITOR</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="avatar-wrapper">
+                                    {# Checa se existe o objeto, se tem o atributo foto, e se a foto não é o valor padrão/vazio #}
+                                    {% if usuario_logado and usuario_logado.foto and usuario_logado.foto != 'default_user.png' and usuario_logado.foto != '' %}
+                                        <img src="{{ url_for('static', filename='uploads/' + usuario_logado.foto) }}?v={{ range(1, 9999) | random }}" 
+                                            class="avatar-img-top shadow-sm" alt="Profile">
+                                    {% else %}
+                                        <div class="avatar-initials-top shadow-sm d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-user text-white" style="font-size: 1.4rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </a>
+
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 animate slideIn mt-2" aria-labelledby="dropdownUser">
+                                <li><h6 class="dropdown-header">Minha Conta</h6></li>
+                                <li>
+                                    <a class="dropdown-item py-2" href="/perfil">
+                                        <i class="fas fa-user-circle me-2 text-primary"></i> Meu Perfil
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ url_for('listar_todos_termos') }}">
+                                        <i class="fas fa-file-alt me-2 text-primary" style="width: 20px; text-align: center;"></i>
+                                        <span>Termos</span>
+                                    </a>
+                                </li>
+                                {% if session['role'] == 'admin' %}
+                                <li>
+                                    <a class="dropdown-item py-2" href="/usuarios">
+                                        <i class="fas fa-user-shield me-2 text-primary"></i> Gerenciar Usuários
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item py-2 text-danger" href="/logout">
+                                        <i class="fas fa-power-off me-2"></i> Encerrar Sessão
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <main id="main-content">
+                <div class="container-fluid">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i> {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+            
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // --- LÓGICA DO MENU TOGGLE (Sidebar Mobile) ---
+        document.getElementById("menu-toggle").addEventListener("click", function(e) {
+            e.preventDefault();
+            document.getElementById("wrapper").classList.toggle("toggled");
+        });
+
+        // --- LÓGICA DO DARK/LIGHT MODE COM PERSISTÊNCIA ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = themeToggleBtn.querySelector('i');
+        const themeText = document.getElementById('theme-text');
+        const htmlElement = document.documentElement;
+
+        // 1. Função que aplica o tema
+        function applyTheme(theme) {
+            htmlElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            if (theme === 'dark') {
+                themeIcon.className = 'fas fa-moon me-2';
+                themeText.textContent = 'Modo Escuro';
+                themeToggleBtn.classList.replace('btn-warning', 'btn-outline-secondary');
+                themeToggleBtn.classList.add('text-white');
+            } else {
+                themeIcon.className = 'fas fa-sun me-2';
+                themeText.textContent = 'Modo Claro';
+                themeToggleBtn.classList.replace('btn-outline-secondary', 'btn-warning');
+                themeToggleBtn.classList.remove('text-white');
+            }
+        }
+
+        // 2. Verifica preferência salva ao carregar
+        const savedTheme = localStorage.getItem('theme') || 'dark'; // Padrão é dark
+        applyTheme(savedTheme);
+
+        // 3. Evento de clique
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        });
+    </script>
+
+ {% block scripts %}{% endblock %}
+</body>
+</html>

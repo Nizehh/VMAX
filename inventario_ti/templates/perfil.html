@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 text-center bg-dark text-white">
+                <div class="card-body">
+                    <div class="position-relative d-inline-block mb-3">
+                        {% if user.foto and user.foto != 'default_user.png' and user.foto != '' %}
+                            <img src="{{ url_for('static', filename='uploads/' + user.foto) }}?v={{ range(1, 9999) | random }}" 
+                                 alt="Avatar" class="rounded-circle img-thumbnail shadow-sm" 
+                                 style="width: 150px; height: 150px; object-fit: cover; border: 2px solid #ff6b00; background: transparent;">
+                        {% else %}
+                            <div class="rounded-circle img-thumbnail shadow-sm d-flex align-items-center justify-content-center mx-auto" 
+                                 style="width: 150px; height: 150px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #ff6b00;">
+                                <i class="fas fa-user text-white-50" style="font-size: 5rem;"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h5 class="fw-bold">{{ user.username }}</h5>
+                    <p class="badge bg-info bg-opacity-75 text-white px-3">{{ user.role.upper() }}</p>
+                    <hr class="border-secondary opacity-25">
+                    <div class="text-start">
+                        <small class="text-muted d-block">Membro desde:</small>
+                        <span class="small fw-bold text-white-50">ID #{{ user.id }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm bg-dark text-white">
+                <div class="card-header bg-transparent border-secondary border-opacity-25 fw-bold">
+                    <i class="fas fa-history me-2 text-warning"></i>Atividades Recentes
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush bg-transparent">
+                        {% for acao in atividades %}
+                        <li class="list-group-item bg-transparent border-secondary border-opacity-25 py-3 text-white-50">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong class="text-white small">{{ acao.acao }}:</strong> 
+                                    <span class="d-block small">{{ acao.detalhe[:40] }}...</span>
+                                </div>
+                                <small style="font-size: 0.7rem;">{{ acao.data_hora.strftime('%d/%m %H:%M') }}</small>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item bg-transparent text-muted small py-3 text-center">Nenhuma atividade recente.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm bg-dark text-white">
+                <div class="card-body p-4">
+                    <form action="{{ url_for('perfil') }}" method="POST" enctype="multipart/form-data">
+                        <h5 class="mb-4 fw-bold text-white"><i class="fas fa-user-edit me-2 text-warning"></i>Informações Pessoais</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-white-50 small">Nome Completo</label>
+                                <input type="text" name="nome_completo" class="form-control bg-secondary bg-opacity-10 border-secondary border-opacity-25 text-white" value="{{ user.nome_completo or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-white-50 small">E-mail Corporativo</label>
+                                <input type="email" name="email" class="form-control bg-secondary bg-opacity-10 border-secondary border-opacity-25 text-white" value="{{ user.email or '' }}">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label text-white-50 small">Alterar Foto de Perfil</label>
+                                <input type="file" name="foto" class="form-control bg-secondary bg-opacity-10 border-secondary border-opacity-25 text-white" accept="image/*">
+                            </div>
+                        </div>
+
+                        <hr class="my-4 border-secondary opacity-25">
+
+                        <h5 class="mb-4 fw-bold text-danger"><i class="fas fa-lock me-2"></i>Segurança</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-white-50 small">Nova Senha</label>
+                                <input type="password" name="nova_senha" class="form-control bg-secondary bg-opacity-10 border-secondary border-opacity-25 text-white" placeholder="Deixe em branco para não alterar">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-white-50 small">Confirmar Nova Senha</label>
+                                <input type="password" name="confirmar_senha" class="form-control bg-secondary bg-opacity-10 border-secondary border-opacity-25 text-white" placeholder="Repita a nova senha">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn px-4 fw-bold" style="background-color: #ff6b00; color: white; border-radius: 8px;">
+                                <i class="fas fa-save me-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div> </div> ```
+{% endblock %}

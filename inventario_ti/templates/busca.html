@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Equipamentos{% endblock %}
+
+{% block content %}
+
+<body class="bg-light p-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Resultados para: "{{ query }}"</h3>
+            <a href="/" class="btn btn-secondary">Voltar ao Dashboard</a>
+        </div>
+        <div class="card shadow">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Ativo</th><th>Item</th><th>Serial</th><th>Status</th><th>Responsável</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in itens %}
+                        <tr>
+                            <td>#{{ item.ativo_tag }}</td>
+                            <td>{{ item.hostname }}</td>
+                            <td>{{ item.serial_st }}</td>
+                            <td>{{ item.status }}</td>
+                            <td>{{ item.usuario }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

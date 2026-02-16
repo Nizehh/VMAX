@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Ativos | S-INVENTÁRIO{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm">
+    <!-- Cabeçalho -->
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-boxes-stacked me-2"></i>
+            Visão Geral de Ativos
+        </h5>
+
+        <a href="/cadastrar_ativo" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Novo Ativo
+        </a>
+    </div>
+
+    <!-- Tabela -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Ativo</th>
+                    <th>Modelo</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                    <th>Atribuído a</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in ativos %}
+                <tr>
+                    <td>
+                        <strong>{{ item.patrimonio }}</strong><br>
+                        <small class="text-muted">{{ item.serial }}</small>
+                    </td>
+
+                    <td>{{ item.modelo }}</td>
+
+                    <td>{{ item.tipo }}</td>
+
+                    <td>
+                        <span class="badge 
+                            {% if item.status == 'Disponível' %}
+                                bg-success
+                            {% else %}
+                                bg-primary
+                            {% endif %}
+                        ">
+                            {{ item.status }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ item.responsavel.nome if item.responsavel else '--' }}
+                    </td>
+
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+
+                            {% if item.status == 'Disponível' %}
+                            <button 
+                                class="btn btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalOut{{ item.id }}">
+                                <i class="fas fa-arrow-up-right-from-square me-1"></i>
+                                Check-out
+                            </button>
+                            {% else %}
+                            <a 
+                                href="/checkin/{{ item.id }}"
+                                class="btn btn-outline-warning">
+                                <i class="fas fa-arrow-down-left me-1"></i>
+                                Check-in
+                            </a>
+                            {% endif %}
+
+                            <a 
+                                href="/editar/{{ item.id }}"
+                                class="btn btn-outline-light"
+                                onclick="return confirm('Deseja editar este item?')">
+                                <i class="fas fa-pen"></i>
+                            </a>
+
+                            <a 
+                                href="/excluir/{{ item.id }}"
+                                class="btn btn-outline-danger {{ 'disabled' if item.status == 'Em Uso' }}"
+                                onclick="return confirm('Tem certeza que deseja excluir?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Colaboradores{% endblock %}
+{% block page_title %}Gestão de Colaboradores{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">Lista de Colaboradores</h4>
+        <small class="text-muted">Gerencie quem está recebendo os ativos</small>
+    </div>
+    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addColabModal">
+        <i class="fas fa-user-plus me-1"></i> Adicionar Colaborador
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Avatar</th>
+                        <th>Nome Completo</th>
+                        <th>CPF</th>
+                        <th>Setor</th>
+                        <th class="text-center">Ativos</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for colab in colaboradores %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">
+                                {{ colab.nome[0] | upper }}
+                            </div>
+                        </td>
+                        <td><span class="fw-bold">{{ colab.nome }}</span></td>
+                        <td>{{ colab.cpf }}</td>
+                        <td><span class="badge border border-secondary text-secondary">{{ colab.setor }}</span></td>
+                        <td class="text-center">
+                            {% if colab.ativos|length > 0 %}
+                                <span class="badge bg-primary rounded-pill">{{ colab.ativos | length }}</span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-light border-0" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                                <a href="/deletar_colaborador/{{ colab.id }}" class="btn btn-sm btn-outline-danger border-0 {% if colab.ativos %}disabled{% endif %}" title="Excluir" onclick="return confirm('Excluir colaborador?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-user-friends fa-3x mb-3 d-block opacity-25"></i>
+                            Nenhum colaborador cadastrado.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addColabModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/colaboradores" method="POST" class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Novo Colaborador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nome Completo</label>
+                    <input type="text" name="nome" class="form-control bg-secondary text-white border-0" placeholder="Ex: João da Silva" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">CPF</label>
+                    <input type="text" name="cpf" id="cpf" class="form-control bg-secondary text-white border-0" placeholder="000.000.000-00" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Setor</label>
+                    <select name="setor" class="form-select bg-secondary text-white border-0" required>
+                        <option value="TI">TI</option>
+                        <option value="Recursos Humanos">Recursos Humanos</option>
+                        <option value="Financeiro">Financeiro</option>
+                        <option value="Operacional">Operacional</option>
+                        <option value="Vendas B2B">Vendas B2B</option>
+                        <option value="Logística">Logística</option>
+                        <option value="Financeiro">Financeiro</option>
+                        <option value="Vendas B2C">Vendas B2C</option>
+                        <option value="Redes">Redes</option>
+                        <option value="Telefonia">Telefonia</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Gestão">Gestão</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary px-4">Cadastrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('cpf').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            e.target.value = value;
+        }
+    });
+</script>
+{% endblock %}
