@@ -11,6 +11,18 @@
             <small class="text-muted">Gestão de Ativos, Licenças e Ciclo de Vida</small>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ url_for('exportar_csv') }}" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-file-export me-1"></i> Exportar
+            </a>
+
+            <button class="btn btn-success shadow-sm" onclick="document.getElementById('inputImport').click()">
+                <i class="fas fa-file-import me-1"></i> Importar CSV
+            </button>
+            
+            <form id="formImport" action="{{ url_for('importar_ativos') }}" method="POST" enctype="multipart/form-data" style="display:none;">
+                <input type="file" name="file" id="inputImport" accept=".csv" onchange="document.getElementById('formImport').submit()">
+            </form>
+
             <button class="btn btn-danger shadow-sm" onclick="location.href='/logs'">
                 <i class="fas fa-shield-alt me-1"></i> Alertas: {{ stats.alertas }}
             </button>

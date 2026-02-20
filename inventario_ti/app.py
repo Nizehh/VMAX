@@ -1,3 +1,5 @@
+import io
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask import Flask, request, render_template, redirect, url_for, make_response, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
@@ -17,6 +19,7 @@ from cryptography.fernet import Fernet
 from io import TextIOWrapper
 from flask import make_response
 from fpdf import FPDF
+from flask import Response
 
 
 if not os.path.exists("secret.key"):
@@ -39,6 +42,9 @@ app.config['QR_FOLDER'] = os.path.join(base_dir, 'static/qrcodes')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7) 
 app.secret_key = 'chave_snipeit_clone_segura'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # Configuração do "Lembrar-me" (7 dias)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
@@ -71,7 +77,7 @@ db = SQLAlchemy(app)
 
 # --- MODELOS DE BANCO DE DADOS ---
 
-class Usuario(db.Model):
+class Usuario(UserMixin,db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     senha = db.Column(db.String(100), nullable=True)
@@ -97,7 +103,6 @@ class Equipamento(db.Model):
     serial_st = db.Column(db.String(100), nullable=True) # Removi unique=True pois Hardware/Acessorio podem não ter
     express_code = db.Column(db.String(100))
     termo = db.relationship('TermoResponsabilidade', backref='equipamento_rel', uselist=False, order_by='desc(TermoResponsabilidade.id)')
-    # Novos Campos Solicitados
     imei1 = db.Column(db.String(50))
     imei2 = db.Column(db.String(50))
     email_licenca = db.Column(db.String(100)) # Novo para Licenças
@@ -204,6 +209,10 @@ def decrypt_password(encrypted_password):
         return "Erro ao descriptografar"
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(Usuario, int(user_id))
+
 # --- FUNÇÕES AUXILIARES ---
 
 def registrar_log(acao, detalhe, equip_id=None):
@@ -237,25 +246,84 @@ def parse_float_safe(float_str):
             return None
     return None
 
+@app.route('/importar_ativos', methods=['POST'])
+@login_required
+def importar_ativos():
+    file = request.files.get('file')
+    if not file:
+        flash("Selecione um arquivo CSV.", "warning")
+        return redirect(url_for('index'))
+
+    try:
+        stream = TextIOWrapper(file.stream, encoding='utf-8-sig')
+        # Forçamos o delimitador ponto e vírgula que você está usando
+        reader = csv.DictReader(stream, delimiter=';')
+
+        itens_importados = 0
+        for row in reader:
+            # MAPEAMENTO: Pegamos o nome exato das colunas do seu arquivo
+            # .get() com o nome que está no seu CSV: 'Tag', 'Serial', etc.
+            tag = row.get('Tag', '').strip()
+            
+            # Se a Tag estiver vazia (como no seu ID 1), vamos usar o Serial ou o ID para não pular
+            if not tag:
+                tag = row.get('Serial', '').strip() or f"SN-{row.get('ID')}"
+
+            # Tratamento para Marca/Modelo (Divide a string se houver uma barra)
+            marca_modelo = row.get('Marca/Modelo', '')
+            if '/' in marca_modelo:
+                marca, modelo = marca_modelo.split('/', 1)
+            else:
+                marca = marca_modelo
+                modelo = marca_modelo
+
+            novo_item = Equipamento(
+                ativo_tag=tag,
+                categoria=row.get('Categoria', 'Outros').strip(),
+                hostname=modelo.strip(),
+                marca=marca.strip(),
+                serial_st=row.get('Serial', '').strip(),
+                status=row.get('Status', 'Disponível').strip(),
+                data_cadastro=datetime.now().strftime('%d/%m/%Y')
+            )
+            db.session.add(novo_item)
+            itens_importados += 1
+        
+        db.session.commit()
+        flash(f"Sucesso! {itens_importados} itens importados.", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro na leitura: {str(e)}", "danger")
+        print(f"Erro detalhado: {e}")
+
+    return redirect(url_for('index'))
+
+@app.route('/exportar_ativos')
+def exportar_ativos():
+    ativos = Equipamento.query.all()
+    
+    def generate():
+        data = io.StringIO()
+        writer = csv.writer(data, delimiter=';')
+        
+        # Cabeçalho
+        writer.writerow(['TIPO', 'NOME DO PC', 'SETOR', 'MODELO', 'ST', 'ATIVO', 'PROCESSADOR', 'MEMORIA', 'HD_SSD', 'WINDOWS'])
+        yield data.getvalue()
+        data.seek(0)
+        data.truncate(0)
+
+        for a in ativos:
+            writer.writerow([a.tipo, a.nome_pc, a.setor, a.modelo, a.service_tag, a.ativo, a.processador, a.memoria, a.hd_ssd, a.windows])
+            yield data.getvalue()
+            data.seek(0)
+            data.truncate(0)
+
+    response = Response(generate(), mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="inventario_vmax.csv")
+    return response
+
 # --- DECORADORES ---
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'username' not in session: 
-            flash('Acesso negado. Por favor, faça login.', 'danger')
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get('role') != 'admin':
-            flash('Acesso negado. Você precisa ser administrador para realizar esta ação.', 'danger')
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 def enviar_email_convite(email_destino, token):
     link = url_for('definir_senha', token=token, _external=True)
@@ -365,38 +433,41 @@ def perfil():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # 1. LIMPA O LIXO ANTES DE TENTAR LOGAR (O lugar correto é aqui)
+        session.clear() 
+        
         username = request.form.get('username')
         senha = request.form.get('senha')
-        
-        # Busca o usuário pelo username (conforme seu init_db.py)
         user = Usuario.query.filter_by(username=username).first()
 
         if user and user.senha == senha:
             if not user.email_confirmado:
-                flash('Sua conta ainda não foi ativada. Verifique seu e-mail.', 'warning')
+                flash('Sua conta ainda não foi ativada.', 'warning')
                 return redirect(url_for('login'))
 
-            # LIMPA A SESSÃO ANTES DE GRAVAR (Garante que não haja lixo de sessões antigas)
-            session.clear()
+            # 2. AGORA SIM, LOGA O USUÁRIO (A chave fica gravada na sessão)
+            login_user(user, remember=True)
             
-            # GRAVAÇÃO EXPLÍCITA NA SESSÃO
             session['username'] = user.username
             session['role'] = user.role
             session['user_id'] = user.id
             session['user_foto'] = user.foto if user.foto else 'default_user.png'
-            
-            # Torna a sessão permanente se o "lembrar-me" for marcado
             session.permanent = True 
             
-            print(f"DEBUG: Login realizado para {username}. Role: {user.role}")
-            
-            registrar_log("Login", "Acesso realizado com sucesso")
             return redirect(url_for('index'))
         
-        print(f"DEBUG: Falha de login para {username}")
         flash('Usuário ou senha inválidos.', 'danger')
-        
     return render_template('login.html')
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # O current_user é preenchido automaticamente pelo Flask-Login
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('Acesso negado. Você precisa ser administrador.', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.context_processor
 def inject_user():
@@ -802,16 +873,20 @@ def deletar(id):
         if item.colaborador_id:
             flash('Erro: Realize o Check-in antes de excluir.', 'danger')
         else:
-            # O Log já existia aqui, mantido conforme seu pedido.
+            # Pegamos o nome do usuário logado
             usuario_logado = session.get('username') or "Desconhecido"
+            
+            modelo_equip = item.hostname or "Sem Modelo"
+            serial_equip = item.serial_st or "Sem Serial"
+            
             log = Historico(
                 usuario_nome=usuario_logado,
                 acao='Excluir',
-                detalhe=f"Deletou o equipamento {item.modelo} (Serial: {item.serial_st})",
-                equipamento_id=item.id
+                detalhe=f"Deletou o equipamento {modelo_equip} (Serial: {serial_equip})",
+                equipamento_id=None # Definimos como None porque o item será deletado e o ID deixará de existir
             )
-            db.session.add(log)
             
+            db.session.add(log)
             db.session.delete(item)
             db.session.commit()
             flash('Item removido e log registrado.', 'success')
